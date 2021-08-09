@@ -2,10 +2,10 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import (QDialog, QGridLayout, QGroupBox, QLabel,
                              QPushButton, QLineEdit, QListWidget, QMessageBox,
-                             QProgressBar)
+                             QProgressBar, QComboBox)
 from PyQt5.QtGui import QPixmap
 import utils
-
+import pymysql
 import sys
 
 
@@ -19,9 +19,10 @@ class Gui(QDialog):
         mainLayout = QGridLayout()
 
         self.createLeftGroup()
-        # self.createRightGroup()
+        self.createRightGroup()
 
         mainLayout.addWidget(self.LeftGroup, 0, 0)
+        mainLayout.addWidget(self.RightGroup, 0, 1)
         self.setLayout(mainLayout)
         self.SettingsGui = SettingsGui(self.Env)
 
@@ -37,13 +38,9 @@ class Gui(QDialog):
         self.SettingsButton = QPushButton('Settings')
 
         layout = QGridLayout()
-        layout.addWidget(self.Image, 0, 0,
-                         pixmap.height() / 20, pixmap.width() / 20)
-        layout.addWidget(self.SkipButton,
-                         pixmap.height() / 20 + 1, pixmap.width() / 20 - 2,
-                         1, 2)
-        layout.addWidget(self.SettingsButton, pixmap.height() / 20 + 1, 0,
-                         1, 2)
+        layout.addWidget(self.Image, 0, 0, 8, 8)
+        layout.addWidget(self.SkipButton, 9, 6, 1, 2)
+        layout.addWidget(self.SettingsButton, 9, 0, 1, 2)
         self.LeftGroup.setLayout(layout)
 
         self.SettingsButton.clicked.connect(self.on_settings_clicked)
@@ -54,6 +51,13 @@ class Gui(QDialog):
 
         self.SearchBar = QLineEdit()
         self.AddressList = QListWidget()
+        self.Database = QComboBox()
+
+        layout = QGridLayout()
+        layout.addWidget(self.SearchBar, 0, 0, 1, 4)
+        layout.addWidget(self.AddressList, 1, 0, 8, 4)
+        layout.addWidget(self.Database, 9, 0, 1, 2)
+        self.RightGroup.setLayout(layout)
         self.PopulateAddressList()
 
     def PopulateAddressList(self):
@@ -88,9 +92,11 @@ class SettingsGui(QDialog):
 
         label1 = QLabel('Photos Folder')
         self.PhotosFolder = QLineEdit()
+        self.PhotosFolder.setText(self.Env['PHOTOSFOLDER'])
 
         label2 = QLabel('Output Folder')
         self.OutputPath = QLineEdit()
+        self.OutputPath.setText(self.Env['OUTPUTPATH'])
 
         layout = QGridLayout()
         layout.addWidget(label1, 0, 0)
@@ -108,12 +114,15 @@ class SettingsGui(QDialog):
 
         label1 = QLabel('Host')
         self.Host = QLineEdit()
+        self.Host.setText(self.Env['HOST'])
 
         label2 = QLabel('Username')
         self.Username = QLineEdit()
+        self.Username.setText(self.Env['USERNAME'])
 
         label3 = QLabel('Password')
         self.Password = QLineEdit()
+        self.Password.setText(self.Env['PASSWORD'])
 
         layout = QGridLayout()
         layout.addWidget(label1)
@@ -135,6 +144,7 @@ class SettingsGui(QDialog):
         self.CancelButton = QPushButton('Cancel')
         self.SaveProgressBar = QProgressBar()
         self.SaveProgressBar.setRange(0, 1)
+        self.SaveProgressBar.setValue(1)
 
         layout = QGridLayout()
         layout.addWidget(self.SaveButton, 0, 2, 1, 2)
@@ -144,9 +154,7 @@ class SettingsGui(QDialog):
         self.Buttons.setLayout(layout)
 
         self.SaveButton.clicked.connect(self.on_saveButton_clicked)
-
-    def on_cancelButton_clicked(self):
-        """Reset fields to env and close window."""
+        self.CancelButton.clicked.connect(self.on_cancelButton_clicked)
 
     def reject(self):
         """Override super reject."""
@@ -180,6 +188,17 @@ class SettingsGui(QDialog):
         utils.updateEnv(env, envPath)
         self.SaveProgressBar.setValue(1)
         self.isSaved = True
+        self.Env = env
+
+    def on_cancelButton_clicked(self):
+        """Reset fields if cancel button is pressed."""
+        self.Host.setText(self.Env['HOST'])
+        self.Username.setText(self.Env['USERNAME'])
+        self.Password.setText(self.Env['PASSWORD'])
+        self.PhotosFolder.setText(self.Env['PHOTOSFOLDER'])
+        self.OutputPath.setText(self.Env['OUTPUTPATH'])
+        self.isSaved = True
+        self.reject()
 
 
 if __name__ == '__main__':

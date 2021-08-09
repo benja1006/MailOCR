@@ -1,4 +1,5 @@
 --Finish pop up so it saves env
+--settings cancel button
 download cust list from mysql
 format cust list into dictionary
 fill list with dictionary keys
@@ -8,3 +9,4 @@ folder of images
 skip button
 figure out how to save association between image and customer
 (save image/address for future OCR)
+Validate settings before saving

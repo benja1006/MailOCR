@@ -83,10 +83,12 @@ class Gui(QDialog):
                 accounts = cursor.fetchall()
                 print(accounts[0])
                 # add accounts to list as BillAddress BillCity BillState BillZi
-                addresses = [a['Bill Address'] + ' ' + a['Bill City'] + ' ' +
-                             a['Bill State'] + ' ' + a['Bill Zip']
-                             for a in accounts if a['Bill Address'] != '']
-                self.AddressList.addItems(addresses)
+
+                dict = {a['Bill Address'] + ' ' + a['Bill City'] + ' ' +
+                        a['Bill State'] + ' ' + a['Bill Zip']: a for a in
+                        accounts if a['Bill Address'] != ''}
+                self.AddressDict = dict
+                self.AddressList.addItems(self.AddressDict.keys)
 
     def on_settings_clicked(self):
         """Create a popup settings box with save/cancel buttons."""

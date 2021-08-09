@@ -1,8 +1,8 @@
 --Finish pop up so it saves env
 --settings cancel button
-download cust list from mysql
-format cust list into dictionary
-fill list with dictionary keys
+--download cust list from mysql
+--format cust list into dictionary
+--fill list with dictionary keys
 implement search
 implement onClick/onEnter
 folder of images

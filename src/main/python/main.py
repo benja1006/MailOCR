@@ -51,22 +51,53 @@ class Gui(QDialog):
 
         self.SearchBar = QLineEdit()
         self.AddressList = QListWidget()
-        self.Database = QComboBox()
+        self.DatabaseBox = QComboBox()
+        self.DatabaseBox.addItems(['SFNY', 'Solar Landscape'])
 
         layout = QGridLayout()
         layout.addWidget(self.SearchBar, 0, 0, 1, 4)
         layout.addWidget(self.AddressList, 1, 0, 8, 4)
-        layout.addWidget(self.Database, 9, 0, 1, 2)
+        layout.addWidget(self.DatabaseBox, 9, 0, 1, 2)
         self.RightGroup.setLayout(layout)
+        self.ActiveDatabase = 'sfny_production'
         self.PopulateAddressList()
+
+        self.DatabaseBox.currentIndexChanged.connect(self.on_database_edit)
 
     def PopulateAddressList(self):
         """Download MSTR_CUSTLIST and populate addresses."""
         # create a dictionary that maps addresses to custListObjects
+        connection = pymysql.connect(host=self.Env['HOST'],
+                                     user=self.Env['USERNAME'],
+                                     password=self.Env['PASSWORD'],
+                                     database=self.ActiveDatabase,
+                                     local_infile=1,
+                                     ssl={'key': 'whatever'},
+                                     cursorclass=pymysql.cursors.DictCursor
+                                     )
+        with connection:
+            with connection.cursor() as cursor:
+                sql = "SELECT * from `MSTR CUSTLIST`"
+                cursor.execute(sql)
+                accounts = cursor.fetchall()
+                print(accounts[0])
+                # add accounts to list as BillAddress BillCity BillState BillZi
+                addresses = [a['Bill Address'] + ' ' + a['Bill City'] + ' ' +
+                             a['Bill State'] + ' ' + a['Bill Zip']
+                             for a in accounts if a['Bill Address'] != '']
+                self.AddressList.addItems(addresses)
 
     def on_settings_clicked(self):
         """Create a popup settings box with save/cancel buttons."""
         self.SettingsGui.show()
+
+    def on_database_edit(self):
+        """Update the database when it is edited."""
+        databases = {
+            'SFNY': 'sfny_production',
+            'Solar Landscape': 'solar_landscape_prod'
+        }
+        self.ActiveDatabase = databases[self.DatabaseBox.currentText()]
 
 
 class SettingsGui(QDialog):

@@ -67,6 +67,7 @@ class Gui(QDialog):
     def PopulateAddressList(self):
         """Download MSTR_CUSTLIST and populate addresses."""
         # create a dictionary that maps addresses to custListObjects
+        self.DatabaseBox.clear()
         connection = pymysql.connect(host=self.Env['HOST'],
                                      user=self.Env['USERNAME'],
                                      password=self.Env['PASSWORD'],
@@ -98,6 +99,7 @@ class Gui(QDialog):
             'Solar Landscape': 'solar_landscape_prod'
         }
         self.ActiveDatabase = databases[self.DatabaseBox.currentText()]
+        self.PopulateAddressList()
 
 
 class SettingsGui(QDialog):

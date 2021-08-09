@@ -1,0 +1,6 @@
+{
+    "app_name": "Mail Sorter",
+    "author": "Benja Share",
+    "main_module": "src/main/python/main.py",
+    "version": "0.0.0"
+}

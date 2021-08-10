@@ -78,7 +78,10 @@ class Gui(QDialog):
                                      )
         with connection:
             with connection.cursor() as cursor:
-                sql = "SELECT * from `MSTR CUSTLIST`"
+                sql = ("SELECT `FNAME`, `LNAME`, `Service Address`, " +
+                       "`Service City`, `Service Zip`, `Bill Address`, " +
+                       "`Bill City`, `Bill Zip`, `Account Number` from " +
+                       "`MSTR CUSTLIST`")
                 cursor.execute(sql)
                 accounts = cursor.fetchall()
                 print(accounts[0])

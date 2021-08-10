@@ -63,11 +63,13 @@ class Gui(QDialog):
         self.PopulateAddressList()
 
         self.DatabaseBox.currentIndexChanged.connect(self.on_database_edit)
+        self.SearchBar.textEdited.connect(self.search)
 
     def PopulateAddressList(self):
         """Download MSTR_CUSTLIST and populate addresses."""
         # create a dictionary that maps addresses to custListObjects
-        self.DatabaseBox.clear()
+        self.SearchBar.setText('')
+        self.AddressList.clear()
         connection = pymysql.connect(host=self.Env['HOST'],
                                      user=self.Env['USERNAME'],
                                      password=self.Env['PASSWORD'],
@@ -80,8 +82,8 @@ class Gui(QDialog):
             with connection.cursor() as cursor:
                 sql = ("SELECT `FNAME`, `LNAME`, `Service Address`, " +
                        "`Service City`, `Service Zip`, `Bill Address`, " +
-                       "`Bill City`, `Bill Zip`, `Account Number` from " +
-                       "`MSTR CUSTLIST`")
+                       "`Bill City`, `Bill State`, `Bill Zip`, " +
+                       "`Account Number` from `MSTR CUSTLIST`")
                 cursor.execute(sql)
                 accounts = cursor.fetchall()
                 print(accounts[0])
@@ -91,7 +93,7 @@ class Gui(QDialog):
                         a['Bill State'] + ' ' + a['Bill Zip']: a for a in
                         accounts if a['Bill Address'] != ''}
                 self.AddressDict = dict
-                self.AddressList.addItems(self.AddressDict.keys)
+                self.AddressList.addItems(self.AddressDict.keys())
 
     def on_settings_clicked(self):
         """Create a popup settings box with save/cancel buttons."""
@@ -105,6 +107,14 @@ class Gui(QDialog):
         }
         self.ActiveDatabase = databases[self.DatabaseBox.currentText()]
         self.PopulateAddressList()
+
+    def search(self):
+        """Search through keys."""
+        searchTerm = self.SearchBar.text()
+        # oldSet = set(self.currAddresses)
+        newSet = set([a for a in self.AddressDict.keys() if searchTerm in a])
+        self.AddressList.clear()
+        self.AddressList.addItems(newSet)
 
 
 class SettingsGui(QDialog):

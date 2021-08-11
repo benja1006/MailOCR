@@ -6,7 +6,9 @@
 --implement search
 implement onClick/onEnter
 --folder of images
-skip button
+--skip button
+deal with invalid login credentials
+update login credentials on settings close
 figure out how to save association between image and customer
 (save image/address for future OCR)
 Validate settings before saving

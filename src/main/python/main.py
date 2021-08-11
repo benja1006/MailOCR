@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (QDialog, QGridLayout, QGroupBox, QLabel,
                              QPushButton, QLineEdit, QListWidget, QMessageBox,
                              QProgressBar, QComboBox)
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import pyqtSignal
 import utils
 import pymysql
 import sys
@@ -19,15 +20,16 @@ class Gui(QDialog):
         self.Env = utils.getEnv(envPath)
         mainLayout = QGridLayout()
 
+        self.createPhotoArray()
+
         self.createLeftGroup()
         self.createRightGroup()
-
-        self.createPhotoList()
 
         mainLayout.addWidget(self.LeftGroup, 0, 0)
         mainLayout.addWidget(self.RightGroup, 0, 1)
         self.setLayout(mainLayout)
         self.SettingsGui = SettingsGui(self.Env)
+        self.SettingsGui.doneEditing.connect(self.on_updateSettings)
 
     def createLeftGroup(self):
         """Create left group containing image and skip button."""
@@ -48,6 +50,7 @@ class Gui(QDialog):
         self.LeftGroup.setLayout(layout)
 
         self.SettingsButton.clicked.connect(self.on_settings_clicked)
+        self.SkipButton.clicked.connect(self.on_skipButton_clicked)
 
     def createRightGroup(self):
         """Create right group containing list of addresses and search bar."""
@@ -90,7 +93,7 @@ class Gui(QDialog):
                        "`Account Number` from `MSTR CUSTLIST`")
                 cursor.execute(sql)
                 accounts = cursor.fetchall()
-                print(accounts[0])
+                # print(accounts[0])
                 # add accounts to list as BillAddress BillCity BillState BillZi
 
                 dict = {a['Bill Address'] + ' ' + a['Bill City'] + ' ' +
@@ -122,16 +125,36 @@ class Gui(QDialog):
 
     def getNextImage(self):
         """Return the path to the next Image."""
+        return self.PhotoArray[0]
 
     def createPhotoArray(self):
         """Create self.PhotoArray with a path to all photos."""
-        photoFolder = self.Env['PHOTOFOLDER']
-        photos = os.listdir(photoFolder)
+        photoFolder = self.Env['PHOTOSFOLDER']
+        if(not os.path.isdir(photoFolder)):
+            photos = ['']
+        else:
+            photos = [os.path.join(photoFolder, f) for f in
+                      os.listdir(photoFolder) if not f.startswith('.')]
         self.PhotoArray = photos
+
+    def on_skipButton_clicked(self):
+        """Move the first image to the end and show new image."""
+        self.PhotoArray.append(self.PhotoArray.pop(0))
+        pixmap = QPixmap(self.getNextImage())
+        self.Image.setPixmap(pixmap)
+
+    def on_updateSettings(self, env):
+        """Reset the app when settings are updated."""
+        self.Env = env
+        self.createPhotoArray()
+        pixmap = QPixmap(self.getNextImage())
+        self.Image.setPixmap(pixmap)
 
 
 class SettingsGui(QDialog):
     """Edits the settings for the app."""
+
+    doneEditing = pyqtSignal(dict)
 
     def __init__(self, env, parent=None):
         """Initialize Gui."""
@@ -227,9 +250,11 @@ class SettingsGui(QDialog):
             ret = alert.exec()
             if(ret == QMessageBox.Save):
                 self.on_saveButton_clicked()
+                self.doneEditing.emit(self.Env)
                 super(SettingsGui, self).reject()
             return
         else:
+            self.doneEditing.emit(self.Env)
             super(SettingsGui, self).reject()
 
     def on_Field_edit(self):
@@ -250,6 +275,7 @@ class SettingsGui(QDialog):
         self.SaveProgressBar.setValue(1)
         self.isSaved = True
         self.Env = env
+        self.reject()
 
     def on_cancelButton_clicked(self):
         """Reset fields if cancel button is pressed."""

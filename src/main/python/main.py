@@ -7,6 +7,7 @@ from PyQt5.QtGui import QPixmap
 import utils
 import pymysql
 import sys
+import os
 
 
 class Gui(QDialog):
@@ -21,6 +22,8 @@ class Gui(QDialog):
         self.createLeftGroup()
         self.createRightGroup()
 
+        self.createPhotoList()
+
         mainLayout.addWidget(self.LeftGroup, 0, 0)
         mainLayout.addWidget(self.RightGroup, 0, 1)
         self.setLayout(mainLayout)
@@ -31,7 +34,8 @@ class Gui(QDialog):
         self.LeftGroup = QGroupBox()
 
         self.Image = QLabel()
-        pixmap = QPixmap(testImagePath)
+
+        pixmap = QPixmap(self.getNextImage())
         self.Image.setPixmap(pixmap)
 
         self.SkipButton = QPushButton('Skip')
@@ -115,6 +119,15 @@ class Gui(QDialog):
         newSet = set([a for a in self.AddressDict.keys() if searchTerm in a])
         self.AddressList.clear()
         self.AddressList.addItems(newSet)
+
+    def getNextImage(self):
+        """Return the path to the next Image."""
+
+    def createPhotoArray(self):
+        """Create self.PhotoArray with a path to all photos."""
+        photoFolder = self.Env['PHOTOFOLDER']
+        photos = os.listdir(photoFolder)
+        self.PhotoArray = photos
 
 
 class SettingsGui(QDialog):
@@ -252,7 +265,6 @@ class SettingsGui(QDialog):
 if __name__ == '__main__':
     appctxt = ApplicationContext()
     envPath = appctxt.get_resource('.env')
-    testImagePath = appctxt.get_resource('Image1.png')
     if(not utils.isAdmin()):
         utils.throwError('Please run as administrator')
     Gui = Gui()

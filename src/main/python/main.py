@@ -18,6 +18,7 @@ class Gui(QDialog):
         """Initialize Gui."""
         super(Gui, self).__init__(parent)
         self.Env = utils.getEnv(envPath)
+        self.SettingsGui = SettingsGui(self.Env, self)
         mainLayout = QGridLayout()
 
         self.createPhotoArray()
@@ -28,8 +29,15 @@ class Gui(QDialog):
         mainLayout.addWidget(self.LeftGroup, 0, 0)
         mainLayout.addWidget(self.RightGroup, 0, 1)
         self.setLayout(mainLayout)
-        self.SettingsGui = SettingsGui(self.Env)
         self.SettingsGui.doneEditing.connect(self.on_updateSettings)
+
+    def show(self):
+        """Override the show function to show settings afterwards."""
+        # print(type(Gui))
+        super().show()
+        if(not utils.checkDbLoginInfo(self.Env)):
+            self.SettingsGui.show()
+            utils.throwError('Please update login info and other settings.')
 
     def createLeftGroup(self):
         """Create left group containing image and skip button."""
@@ -75,10 +83,14 @@ class Gui(QDialog):
     def PopulateAddressList(self):
         """Download MSTR_CUSTLIST and populate addresses."""
         # create a dictionary that maps addresses to custListObjects
+        if(not utils.checkDbLoginInfo(self.Env)):
+            self.AddressDict = {}
+            self.AddressList.clear()
+            return
         self.SearchBar.setText('')
         self.AddressList.clear()
         connection = pymysql.connect(host=self.Env['HOST'],
-                                     user=self.Env['USERNAME'],
+                                     user=self.Env['USER'],
                                      password=self.Env['PASSWORD'],
                                      database=self.ActiveDatabase,
                                      local_infile=1,
@@ -149,6 +161,7 @@ class Gui(QDialog):
         self.createPhotoArray()
         pixmap = QPixmap(self.getNextImage())
         self.Image.setPixmap(pixmap)
+        self.PopulateAddressList()
 
 
 class SettingsGui(QDialog):
@@ -202,7 +215,7 @@ class SettingsGui(QDialog):
 
         label2 = QLabel('Username')
         self.Username = QLineEdit()
-        self.Username.setText(self.Env['USERNAME'])
+        self.Username.setText(self.Env['USER'])
 
         label3 = QLabel('Password')
         self.Password = QLineEdit()
@@ -266,7 +279,7 @@ class SettingsGui(QDialog):
         """Save the env."""
         env = {
             "HOST": self.Host.text(),
-            "USERNAME": self.Username.text(),
+            "USER": self.Username.text(),
             "PASSWORD": self.Password.text(),
             "PHOTOSFOLDER": self.PhotosFolder.text(),
             "OUTPUTPATH": self.OutputPath.text()
@@ -280,7 +293,7 @@ class SettingsGui(QDialog):
     def on_cancelButton_clicked(self):
         """Reset fields if cancel button is pressed."""
         self.Host.setText(self.Env['HOST'])
-        self.Username.setText(self.Env['USERNAME'])
+        self.Username.setText(self.Env['USER'])
         self.Password.setText(self.Env['PASSWORD'])
         self.PhotosFolder.setText(self.Env['PHOTOSFOLDER'])
         self.OutputPath.setText(self.Env['OUTPUTPATH'])

@@ -2,6 +2,7 @@
 from PyQt5.QtWidgets import QMessageBox
 import os
 import ctypes
+import pymysql
 
 
 def getEnv(envPath):
@@ -42,3 +43,18 @@ def isAdmin():
     except AttributeError:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
     return is_admin
+
+
+def checkDbLoginInfo(newEnv):
+    """Make sure the given login information is valid for the db."""
+    try:
+        pymysql.connect(host=newEnv['HOST'],
+                        user=newEnv['USER'],
+                        password=newEnv['PASSWORD'],
+                        database=None,
+                        local_infile=1,
+                        ssl={'key': 'whatever'},
+                        cursorclass=pymysql.cursors.DictCursor)
+    except pymysql.err.OperationalError:
+        return False
+    return True

@@ -35,9 +35,14 @@ class Gui(QDialog):
         """Override the show function to show settings afterwards."""
         # print(type(Gui))
         super().show()
-        if(not utils.checkDbLoginInfo(self.Env)):
+        updateSettings = False
+        for value in self.Env.values():
+            if value == '':
+                updateSettings = True
+        if(not utils.checkDbLoginInfo(self.Env) or updateSettings):
             self.SettingsGui.show()
-            utils.throwError('Please update login info and other settings.')
+            utils.throwError('Make sure all settings are correct and ' +
+                             'filled in.')
 
     def createLeftGroup(self):
         """Create left group containing image and skip button."""
@@ -79,6 +84,8 @@ class Gui(QDialog):
 
         self.DatabaseBox.currentIndexChanged.connect(self.on_database_edit)
         self.SearchBar.textEdited.connect(self.search)
+        self.AddressList.itemDoubleClicked.connect(self.on_item_select)
+        self.SearchBar.returnPressed.connect(self.on_enter_pressed)
 
     def PopulateAddressList(self):
         """Download MSTR_CUSTLIST and populate addresses."""
@@ -134,10 +141,14 @@ class Gui(QDialog):
         newSet = set([a for a in self.AddressDict.keys() if searchTerm in a])
         self.AddressList.clear()
         self.AddressList.addItems(newSet)
+        self.AddressList.setCurrentRow(0)
 
     def getNextImage(self):
         """Return the path to the next Image."""
-        return self.PhotoArray[0]
+        if len(self.PhotoArray):
+            return self.PhotoArray[0][0]
+        else:
+            return None
 
     def createPhotoArray(self):
         """Create self.PhotoArray with a path to all photos."""
@@ -145,7 +156,7 @@ class Gui(QDialog):
         if(not os.path.isdir(photoFolder)):
             photos = ['']
         else:
-            photos = [os.path.join(photoFolder, f) for f in
+            photos = [(os.path.join(photoFolder, f), f) for f in
                       os.listdir(photoFolder) if not f.startswith('.')]
         self.PhotoArray = photos
 
@@ -162,6 +173,26 @@ class Gui(QDialog):
         pixmap = QPixmap(self.getNextImage())
         self.Image.setPixmap(pixmap)
         self.PopulateAddressList()
+
+    def on_item_select(self, item):
+        """Pass item to pairItems."""
+        self.pairItems(item)
+
+    def on_enter_pressed(self):
+        """Pass current item to pairItems."""
+        self.pairItems(self.AddressList.currentItem())
+
+    def pairItems(self, item):
+        """Pair item and image and output to file."""
+        if(not os.path.isdir(self.Env['OUTPUTPATH'])):
+            return utils.throwError('Please enter a valid output folder.')
+        filePath = os.path.join(self.Env['OUTPUTPATH'], 'output.txt')
+        accountNumber = self.AddressDict[item.text()]['Account Number']
+        with open(filePath, 'a') as file:
+            file.write('%s:%s \n' % (self.PhotoArray.pop(0)[1], accountNumber))
+        pixmap = QPixmap(self.getNextImage())
+        print(self.getNextImage())
+        self.Image.setPixmap(pixmap)
 
 
 class SettingsGui(QDialog):
@@ -263,8 +294,6 @@ class SettingsGui(QDialog):
             ret = alert.exec()
             if(ret == QMessageBox.Save):
                 self.on_saveButton_clicked()
-                self.doneEditing.emit(self.Env)
-                super(SettingsGui, self).reject()
             return
         else:
             self.doneEditing.emit(self.Env)
@@ -288,6 +317,8 @@ class SettingsGui(QDialog):
         self.SaveProgressBar.setValue(1)
         self.isSaved = True
         self.Env = env
+        if(not os.path.isdir(env['OUTPUTPATH'])):
+            return utils.throwError('Please set a valid output path.')
         self.reject()
 
     def on_cancelButton_clicked(self):
